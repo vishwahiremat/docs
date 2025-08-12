@@ -1,7 +1,7 @@
 ---
 type: docs
-title: "Tutorial: Add a custom resource type"
-linkTitle: "Add a custom resource type"
+title: "Tutorial: Create a resource type"
+linkTitle: "Create a resource type"
 description: "Learn how to define and deploy a resource type in your Radius application"
 weight: 120
 categories: ["Tutorial"]
@@ -9,7 +9,7 @@ categories: ["Tutorial"]
 
 ## Overview
 
-Radius includes several built-in resource types which developers can use to build applications. These include core resource types such as Containers, Gateways, and Secrets. You can also create your own custom resource types. This tutorial guides you through creating a PostgreSQL resource and deploying the sample Todo List application with PostgreSQL.
+Radius includes several built-in resource types which developers can use to build applications. These include resource types such as Containers, Gateways, and Secrets. You can also create your own resource types. This tutorial guides you through creating a PostgreSQL resource and deploying the sample Todo List application with PostgreSQL.
 
 {{< image src="tutorial2.png" alt="Diagram of the Todo List with PostgreSQL" width=600px >}}
 
@@ -39,7 +39,6 @@ To create a PostgreSQL resource type in Radius, first create the resource type d
 
     - **`name`**: The namespace of the resource type, as a convention `Radius.Resources` is recommended but any name in the form `PrimaryName.SecondaryName` can be used
     - **`types`**: The resource type name
-    - **`capabilities`**: This specifies features of the resource type. The only available option is `SupportsRecipes` which indicates that the resource type can be deployed via a Recipe. 
     - **`apiVersions`**: The version of the schema defined below
     - **`schema`**: The OpenAPI v3 schema which defines the properties of the resource type
         - **`environment`**: The Radius environment ID which the resource is deployed to, this property is set by the Radius CLI when the resource is deployed
@@ -52,7 +51,7 @@ To create a PostgreSQL resource type in Radius, first create the resource type d
 
     The `host`, `port`, `username`, and `password` properties are read-only properties set by Recipe.
 
-1. Create the resource type using the [rad resource-type]({{< ref rad_resource-type_create >}}) command:
+2. Create the resource type using the [rad resource-type]({{< ref rad_resource-type_create >}}) command:
 
     ```bash
     rad resource-type create postgreSQL -f types.yaml
@@ -60,8 +59,6 @@ To create a PostgreSQL resource type in Radius, first create the resource type d
 
    ```
    $ rad resource-type create postgreSQL -f types.yaml 
-   Resource provider "Radius.Resources" not found.
-   Creating resource provider Radius.Resources at location global
    Creating resource type Radius.Resources/postgreSQL
    Creating API Version Radius.Resources/postgreSQL@2023-10-01-preview
    Creating location Radius.Resources/global/
@@ -251,7 +248,7 @@ Bicep templates must be stored in an OCI registry accessible by Radius. As discu
     + }
     ```
 
-1. Modify the `demo` container to use the PostgreSQL. Because PostgreSQL is a custom resource type, the environment variables must be manually specified.
+2. Connect the `demo` container to the PostgreSQL database. When a connection is added between a container and another resource, the properties of the connected resource are created as environment variables in the container. If you prefer to not have environment variables created automatically, set the `disableDefaultEnvVars` property to `true` on the container resource.
 
     ```diff
     resource demo 'Applications.Core/containers@2023-10-01-preview' = {
@@ -265,24 +262,6 @@ Bicep templates must be stored in an OCI registry accessible by Radius. As discu
               containerPort: 3000
             }
           }
-    +      env: {
-    +        CONNECTION_POSTGRES_HOST: {
-    +          value: postgresql.properties.host
-    +        }
-    +        CONNECTION_POSTGRES_PORT: {
-    +          value: string(postgresql.properties.port)
-    +        }
-    +        CONNECTION_POSTGRES_USERNAME: {
-    +          value: postgresql.properties.username
-    +        }
-    +        CONNECTION_POSTGRES_DATABASE: {
-    +          value: postgresql.properties.database
-    +        }
-    +        //This is stored and passed as cleartext for demo purposes. In production, use a secret store.
-    +        CONNECTION_POSTGRES_PASSWORD: {
-    +          value: postgresql.properties.password
-    +        }   
-    +      }
         }
         connections: {
     -      mongodb: {
@@ -299,13 +278,9 @@ Bicep templates must be stored in an OCI registry accessible by Radius. As discu
     }
     ```
 
-   {{% alert title="Caution" color="warning" %}}
-   In this example the POSTGRESQL_PASSWORD is stored as a cleartext property for demo purposes. In production environments, always use secrets to store and reference sensitive information like passwords.
-   {{% /alert %}}
+## Step 5: Deploy the application
 
-## Step 5: Run the application
-
-Run the application using `rad run`. The `rad run` command sets up port forwarding to the application. .
+Deploy the application using `rad deploy`.
 
 ```bash
 rad deploy app.bicep
@@ -342,4 +317,4 @@ Open the gateway URL in your browser. The Radius Connections section now has Pos
 
 <br><br>
 
-{{< button text="Next step: Create a composite Recipe →" page="composite-recipe" >}}
+{{< button text="Next step: Create a composite Recipe →" page="create-composite-recipe" >}}
